@@ -252,6 +252,23 @@ input:checked + .slider:before {
   display: none;
 }
 
+.control-separator {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.control-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#outline-controls {
+  display: none;
+}
+
 .control-group {
   display: flex;
   flex-direction: column;

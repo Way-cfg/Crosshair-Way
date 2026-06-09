@@ -45,6 +45,13 @@ function applySettingsToUI() {
   }
 
   document.getElementById('autoStartToggle').checked = settings.autoStart || false;
+
+  document.getElementById('outlineToggle').checked = settings.outlineEnabled || false;
+  setValue('outlineThicknessSlider', settings.outlineThickness || 1);
+  setText('outlineThicknessValue', (settings.outlineThickness || 1) + 'px');
+  setValue('outlineColorPicker', settings.outlineColor || '#000000');
+  setValue('outlineColorHex', settings.outlineColor || '#000000');
+  toggleOutlineControls(settings.outlineEnabled || false);
 }
 
 function setValue(id, val) {
@@ -96,6 +103,7 @@ function setupEventListeners() {
     { id: 'offsetXSlider', key: 'offsetX', suffix: 'px', displayId: 'offsetXValue' },
     { id: 'offsetYSlider', key: 'offsetY', suffix: 'px', displayId: 'offsetYValue' },
     { id: 'imageSizeSlider', key: 'imageSize', suffix: 'px', displayId: 'imageSizeValue' },
+    { id: 'outlineThicknessSlider', key: 'outlineThickness', suffix: 'px', displayId: 'outlineThicknessValue' },
     {
       id: 'opacitySlider', key: 'opacity', suffix: '%', displayId: 'opacityValue',
       transform: (v) => v / 100
@@ -151,11 +159,35 @@ function setupEventListeners() {
   document.getElementById('autoStartToggle').addEventListener('change', (e) => {
     window.crosshairAPI.updateSetting('autoStart', e.target.checked);
   });
+
+  document.getElementById('outlineToggle').addEventListener('change', (e) => {
+    toggleOutlineControls(e.target.checked);
+    window.crosshairAPI.updateSetting('outlineEnabled', e.target.checked);
+  });
+
+  document.getElementById('outlineColorPicker').addEventListener('input', (e) => {
+    const color = e.target.value;
+    document.getElementById('outlineColorHex').value = color;
+    window.crosshairAPI.updateSetting('outlineColor', color);
+  });
+
+  document.getElementById('outlineColorHex').addEventListener('change', (e) => {
+    let color = e.target.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+      document.getElementById('outlineColorPicker').value = color;
+      window.crosshairAPI.updateSetting('outlineColor', color);
+    }
+  });
 }
 
 function toggleCrosshairMode(mode) {
   document.getElementById('generator-controls').classList.toggle('hidden', mode !== 'generator');
   document.getElementById('image-controls').classList.toggle('hidden', mode !== 'image');
+}
+
+function toggleOutlineControls(enabled) {
+  const el = document.getElementById('outline-controls');
+  if (el) el.style.display = enabled ? 'flex' : 'none';
 }
 
 async function loadMonitors() {

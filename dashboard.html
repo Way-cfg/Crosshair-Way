@@ -98,6 +98,32 @@
             <label>Opacity: <span id="opacityValue">80</span>%</label>
             <input type="range" id="opacitySlider" min="5" max="100" value="80" class="glow-slider">
           </div>
+
+          <div class="control-separator"></div>
+
+          <div class="control-group">
+            <div class="control-header-row">
+              <label>Outline</label>
+              <label class="switch">
+                <input type="checkbox" id="outlineToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="outline-controls" class="controls-panel">
+            <div class="control-group">
+              <label>Thickness: <span id="outlineThicknessValue">1</span>px</label>
+              <input type="range" id="outlineThicknessSlider" min="1" max="5" value="1" class="glow-slider">
+            </div>
+            <div class="control-group">
+              <label>Outline Color</label>
+              <div class="color-picker-row">
+                <input type="color" id="outlineColorPicker" value="#000000">
+                <input type="text" id="outlineColorHex" value="#000000" maxlength="7">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="image-controls" class="controls-panel hidden">

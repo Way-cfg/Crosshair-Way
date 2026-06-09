@@ -6,6 +6,9 @@ let state = {
   thickness: 3,
   gap: 6,
   opacity: 0.8,
+  outlineEnabled: false,
+  outlineThickness: 1,
+  outlineColor: '#000000',
   customImagePath: ''
 };
 
@@ -40,58 +43,111 @@ function render() {
 }
 
 function generateSVG() {
-  const { shape, color, size, thickness, gap, opacity } = state;
+  const { shape, color, size, thickness, gap, opacity, outlineEnabled, outlineThickness: olT, outlineColor: olC } = state;
   const half = size / 2;
   const strokeW = thickness;
   const gapVal = gap;
-  const viewSize = size + strokeW * 2 + gapVal * 2;
+  const padding = strokeW + (outlineEnabled ? olT * 2 : 0);
+  const viewSize = size + strokeW * 2 + gapVal * 2 + (outlineEnabled ? olT * 4 : 0);
 
-  let paths = '';
+  let fillPaths = '';
+  let outlinePaths = '';
 
   switch (shape) {
     case 'dot': {
       const r = Math.max(size / 4, strokeW);
-      paths = `<circle cx="${viewSize / 2}" cy="${viewSize / 2}" r="${r}" fill="${color}" opacity="${opacity}"/>`;
+      fillPaths = `<circle cx="${viewSize / 2}" cy="${viewSize / 2}" r="${r}" fill="${color}" opacity="${opacity}"/>`;
+      if (outlineEnabled) {
+        outlinePaths = `<circle cx="${viewSize / 2}" cy="${viewSize / 2}" r="${r}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}"/>`;
+      }
       break;
     }
     case 'cross': {
       const c = viewSize / 2;
       const arm = half;
-      paths = `
-        <rect x="${c - strokeW / 2}" y="${c - arm - gapVal}" width="${strokeW}" height="${arm * 2}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
-        <rect x="${c - arm - gapVal}" y="${c - strokeW / 2}" width="${arm * 2}" height="${strokeW}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+      const x1 = c - strokeW / 2;
+      const y1 = c - arm - gapVal;
+      const w1 = strokeW;
+      const h1 = arm * 2;
+      const x2 = c - arm - gapVal;
+      const y2 = c - strokeW / 2;
+      const w2 = arm * 2;
+      const h2 = strokeW;
+      fillPaths = `
+        <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
       `;
+      if (outlineEnabled) {
+        outlinePaths = `
+          <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+          <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        `;
+      }
       break;
     }
     case 'circle': {
       const c = viewSize / 2;
       const radius = half - gapVal;
-      paths = `
+      fillPaths = `
         <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="${color}" stroke-width="${strokeW}" opacity="${opacity}" />
         <circle cx="${c}" cy="${c}" r="${Math.max(strokeW / 2, 1.5)}" fill="${color}" opacity="${opacity}" />
       `;
+      if (outlineEnabled) {
+        outlinePaths = `
+          <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="${olC}" stroke-width="${strokeW + olT * 2}" opacity="${opacity}" />
+          <circle cx="${c}" cy="${c}" r="${Math.max(strokeW / 2, 1.5)}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" />
+        `;
+      }
       break;
     }
     case 'tshape': {
       const c = viewSize / 2;
       const arm = half;
-      paths = `
-        <rect x="${c - arm - gapVal}" y="${c - strokeW / 2}" width="${arm * 2 + gapVal * 2}" height="${strokeW}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
-        <rect x="${c - strokeW / 2}" y="${c - arm - gapVal}" width="${strokeW}" height="${arm}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+      const x1 = c - arm - gapVal;
+      const y1 = c - strokeW / 2;
+      const w1 = arm * 2 + gapVal * 2;
+      const h1 = strokeW;
+      const x2 = c - strokeW / 2;
+      const y2 = c - arm - gapVal;
+      const w2 = strokeW;
+      const h2 = arm;
+      fillPaths = `
+        <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
       `;
+      if (outlineEnabled) {
+        outlinePaths = `
+          <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+          <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        `;
+      }
       break;
     }
     default: {
       const c = viewSize / 2;
       const arm = half;
-      paths = `
-        <rect x="${c - strokeW / 2}" y="${c - arm - gapVal}" width="${strokeW}" height="${arm * 2}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
-        <rect x="${c - arm - gapVal}" y="${c - strokeW / 2}" width="${arm * 2}" height="${strokeW}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+      const x1 = c - strokeW / 2;
+      const y1 = c - arm - gapVal;
+      const w1 = strokeW;
+      const h1 = arm * 2;
+      const x2 = c - arm - gapVal;
+      const y2 = c - strokeW / 2;
+      const w2 = arm * 2;
+      const h2 = strokeW;
+      fillPaths = `
+        <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="${color}" opacity="${opacity}" rx="${strokeW / 2}"/>
       `;
+      if (outlineEnabled) {
+        outlinePaths = `
+          <rect x="${x1}" y="${y1}" width="${w1}" height="${h1}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+          <rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="none" stroke="${olC}" stroke-width="${olT}" opacity="${opacity}" rx="${strokeW / 2}"/>
+        `;
+      }
     }
   }
 
-  return `<svg width="${viewSize}" height="${viewSize}" viewBox="0 0 ${viewSize} ${viewSize}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+  return `<svg width="${viewSize}" height="${viewSize}" viewBox="0 0 ${viewSize} ${viewSize}" xmlns="http://www.w3.org/2000/svg">${outlinePaths}${fillPaths}</svg>`;
 }
 
 init();

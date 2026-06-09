@@ -1,4 +1,12 @@
 node_modules/
 dist/
+out/
 .env
 *.log
+*.md
+*.db
+*.sqlite
+scratchpad*
+agent*
+todo*
+notes*

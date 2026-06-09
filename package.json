@@ -6,10 +6,51 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "make:exe": "electron-forge make --targets @electron-forge/maker-squirrel",
-    "make:msi": "electron-forge make --targets @electron-forge/maker-wix"
+    "build": "electron-builder build --win --x64",
+    "build:exe": "electron-builder build --win --x64 --config.win.target=nsis",
+    "build:msi": "electron-builder build --win --x64 --config.win.target=msi",
+    "dist": "electron-builder build --win --x64 --publish=never"
+  },
+  "build": {
+    "appId": "com.waycfg.crosshairway",
+    "productName": "Crosshair Way",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "dashboard.html",
+      "dashboard.css",
+      "dashboard.js",
+      "overlay.html",
+      "overlay.css",
+      "overlay.js",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Crosshair Way"
+    }
   },
   "author": "Way-cfg",
   "license": "MIT",
@@ -21,6 +62,7 @@
     "@electron-forge/maker-squirrel": "^7.4.0",
     "@electron-forge/maker-wix": "^7.4.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
-    "electron": "^28.1.0"
+    "electron": "^28.1.0",
+    "electron-builder": "^26.15.2"
   }
 }

@@ -153,6 +153,29 @@
             <input type="range" id="imageSizeSlider" min="2" max="400" value="60" class="glow-slider">
           </div>
         </div>
+
+        <div class="zoom-card">
+          <div class="control-header-row">
+            <label class="zoom-title">Dynamic Zoom Modifier</label>
+            <label class="switch">
+              <input type="checkbox" id="zoomModeToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div id="zoom-controls" class="zoom-controls">
+            <div class="zoom-row">
+              <label>Trigger Mode</label>
+              <select id="zoomTriggerType" class="glow-select">
+                <option value="toggle">Toggle (press to switch)</option>
+              </select>
+            </div>
+            <div class="zoom-row">
+              <label>Zoom Keybind</label>
+              <button id="zoomKeybindBtn" class="hotkey-bind-btn">Ctrl + Shift + Z</button>
+            </div>
+            <button id="zoomConfigBtn" class="zoom-config-btn">Configure Zoom Crosshair Style</button>
+          </div>
+        </div>
       </section>
 
       <section id="tab-position" class="tab-content">

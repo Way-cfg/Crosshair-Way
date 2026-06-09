@@ -1,4 +1,5 @@
 let settings = {};
+let isZoomConfiguring = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   settings = await window.crosshairAPI.getSettings();
@@ -6,7 +7,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   loadMonitors();
   loadProfileDropdown();
+  loadZoomUI();
 });
+
+function saveSetting(key, val) {
+  if (isZoomConfiguring) {
+    return window.crosshairAPI.updateZoomSetting(key, val);
+  }
+  return window.crosshairAPI.updateSetting(key, val);
+}
 
 function applySettingsToUI() {
   applySlider('sizeSlider', 'sizeValue', Number(settings.size), 'px');
@@ -74,6 +83,14 @@ function setText(id, val) {
 function setupEventListeners() {
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
+      if (isZoomConfiguring && item.dataset.tab !== 'crosshair') {
+        isZoomConfiguring = false;
+        const btn = document.getElementById('zoomConfigBtn');
+        btn.classList.remove('active');
+        btn.textContent = 'Configure Zoom Crosshair Style';
+        document.querySelector('.zoom-card').classList.remove('configuring');
+        window.crosshairAPI.forceOverlaySync();
+      }
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       item.classList.add('active');
@@ -86,7 +103,7 @@ function setupEventListeners() {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       toggleCrosshairMode(btn.dataset.mode);
-      window.crosshairAPI.updateSetting('crosshairMode', btn.dataset.mode);
+      saveSetting('crosshairMode', btn.dataset.mode);
     });
   });
 
@@ -95,7 +112,7 @@ function setupEventListeners() {
       document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const shape = btn.dataset.shape;
-      window.crosshairAPI.updateSetting('shape', shape);
+      saveSetting('shape', shape);
     });
   });
 
@@ -125,33 +142,33 @@ function setupEventListeners() {
       setText(displayId, val + suffix);
       updateSliderFill(slider);
       const saveVal = transform ? transform(val) : val;
-      window.crosshairAPI.updateSetting(key, saveVal);
+      saveSetting(key, saveVal);
     });
   });
 
   document.getElementById('colorPicker').addEventListener('input', (e) => {
     const color = e.target.value;
     document.getElementById('colorHex').value = color;
-    window.crosshairAPI.updateSetting('color', color);
+    saveSetting('color', color);
   });
 
   document.getElementById('colorHex').addEventListener('change', (e) => {
     let color = e.target.value.trim();
     if (/^#[0-9a-fA-F]{6}$/.test(color)) {
       document.getElementById('colorPicker').value = color;
-      window.crosshairAPI.updateSetting('color', color);
+      saveSetting('color', color);
     }
   });
 
   document.getElementById('monitorSelect').addEventListener('change', (e) => {
-    window.crosshairAPI.updateSetting('monitorIndex', parseInt(e.target.value));
+    saveSetting('monitorIndex', parseInt(e.target.value));
   });
 
   document.getElementById('pickImageBtn').addEventListener('click', async () => {
     const filePath = await window.crosshairAPI.pickImage();
     if (filePath) {
       document.getElementById('imagePathDisplay').textContent = filePath;
-      window.crosshairAPI.updateSetting('customImagePath', filePath);
+      saveSetting('customImagePath', filePath);
     }
   });
 
@@ -160,32 +177,32 @@ function setupEventListeners() {
     setValue('offsetYSlider', 0);
     setText('offsetXValue', '0px');
     setText('offsetYValue', '0px');
-    window.crosshairAPI.updateSetting('offsetX', 0);
-    window.crosshairAPI.updateSetting('offsetY', 0);
+    saveSetting('offsetX', 0);
+    saveSetting('offsetY', 0);
   });
 
   document.getElementById('autoStartToggle').addEventListener('change', (e) => {
-    window.crosshairAPI.updateSetting('autoStart', e.target.checked);
+    saveSetting('autoStart', e.target.checked);
   });
 
   setupHotkeyBinding();
 
   document.getElementById('outlineToggle').addEventListener('change', (e) => {
     toggleOutlineControls(e.target.checked);
-    window.crosshairAPI.updateSetting('outlineEnabled', e.target.checked);
+    saveSetting('outlineEnabled', e.target.checked);
   });
 
   document.getElementById('outlineColorPicker').addEventListener('input', (e) => {
     const color = e.target.value;
     document.getElementById('outlineColorHex').value = color;
-    window.crosshairAPI.updateSetting('outlineColor', color);
+    saveSetting('outlineColor', color);
   });
 
   document.getElementById('outlineColorHex').addEventListener('change', (e) => {
     let color = e.target.value.trim();
     if (/^#[0-9a-fA-F]{6}$/.test(color)) {
       document.getElementById('outlineColorPicker').value = color;
-      window.crosshairAPI.updateSetting('outlineColor', color);
+      saveSetting('outlineColor', color);
     }
   });
 
@@ -217,6 +234,23 @@ function setupEventListeners() {
     await loadProfileDropdown();
     await switchProfile('Default');
   });
+
+  document.getElementById('zoomModeToggle').addEventListener('change', async (e) => {
+    await window.crosshairAPI.updateSetting('zoomModeEnabled', e.target.checked);
+    settings.zoomModeEnabled = e.target.checked;
+  });
+
+  document.getElementById('zoomTriggerType').addEventListener('change', async (e) => {
+    await window.crosshairAPI.updateSetting('zoomTriggerType', e.target.value);
+  });
+
+  document.getElementById('zoomTriggerType').addEventListener('change', async (e) => {
+    await window.crosshairAPI.updateSetting('zoomTriggerType', e.target.value);
+  });
+
+  document.getElementById('zoomConfigBtn').addEventListener('click', toggleZoomConfig);
+
+  setupZoomKeybindBinding();
 }
 
 function toggleCrosshairMode(mode) {
@@ -287,6 +321,68 @@ async function switchProfile(name) {
   document.getElementById('deleteProfileBtn').disabled = (name === 'Default');
 }
 
+function loadZoomUI() {
+  document.getElementById('zoomModeToggle').checked = settings.zoomModeEnabled || false;
+  document.getElementById('zoomTriggerType').value = settings.zoomTriggerType || 'toggle';
+  const zoomKey = settings.zoomKeybind || 'Control+Shift+Z';
+  document.getElementById('zoomKeybindBtn').textContent = zoomKey.replace(/\+/g, ' + ');
+}
+
+async function toggleZoomConfig() {
+  isZoomConfiguring = !isZoomConfiguring;
+  const btn = document.getElementById('zoomConfigBtn');
+  const card = document.querySelector('.zoom-card');
+  if (isZoomConfiguring) {
+    btn.classList.add('active');
+    btn.textContent = 'Exit Zoom Config';
+    card.classList.add('configuring');
+    const zoomSettings = await window.crosshairAPI.getZoomSettings();
+    applyZoomSettingsToUI(zoomSettings);
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = 'Configure Zoom Crosshair Style';
+    card.classList.remove('configuring');
+    settings = await window.crosshairAPI.getSettings();
+    applySettingsToUI();
+    window.crosshairAPI.forceOverlaySync();
+  }
+}
+
+function applyZoomSettingsToUI(zs) {
+  applySlider('sizeSlider', 'sizeValue', Number(zs.size), 'px');
+  applySlider('thicknessSlider', 'thicknessValue', Number(zs.thickness), 'px');
+  applySlider('gapSlider', 'gapValue', Number(zs.gap), 'px');
+  applySlider('opacitySlider', 'opacityValue', Math.round(Number(zs.opacity) * 100), '%');
+  setValue('colorPicker', zs.color);
+  setValue('colorHex', zs.color);
+  applySlider('imageSizeSlider', 'imageSizeValue', Number(zs.imageSize) || 60, 'px');
+
+  const modeBtn = document.querySelector(`.mode-btn[data-mode="${zs.crosshairMode}"]`);
+  if (modeBtn) {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    modeBtn.classList.add('active');
+  }
+  toggleCrosshairMode(zs.crosshairMode);
+
+  const shapeBtn = document.querySelector(`.shape-btn[data-shape="${zs.shape}"]`);
+  if (shapeBtn) {
+    document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+    shapeBtn.classList.add('active');
+  }
+
+  if (zs.customImagePath) {
+    document.getElementById('imagePathDisplay').textContent = zs.customImagePath;
+  } else {
+    document.getElementById('imagePathDisplay').textContent = 'No image selected';
+  }
+
+  document.getElementById('outlineToggle').checked = zs.outlineEnabled || false;
+  applySlider('outlineThicknessSlider', 'outlineThicknessValue', Number(zs.outlineThickness) || 1, 'px');
+  setValue('outlineColorPicker', zs.outlineColor || '#000000');
+  setValue('outlineColorHex', zs.outlineColor || '#000000');
+  toggleOutlineControls(zs.outlineEnabled || false);
+}
+
 function updateSliderFill(el) {
   const min = parseFloat(el.min) || 0;
   const max = parseFloat(el.max) || 100;
@@ -349,5 +445,60 @@ function setupHotkeyBinding() {
     stopListening();
     btn.textContent = formatHotkey(accel);
     window.crosshairAPI.setHotkey(accel);
+  });
+}
+
+function setupZoomKeybindBinding() {
+  const btn = document.getElementById('zoomKeybindBtn');
+  let listening = false;
+
+  function startListening() {
+    listening = true;
+    btn.classList.add('listening');
+    btn.textContent = 'Press keys to bind...';
+  }
+
+  function stopListening() {
+    listening = false;
+    btn.classList.remove('listening');
+  }
+
+  btn.addEventListener('click', startListening);
+
+  document.addEventListener('keydown', async (e) => {
+    if (!listening) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.key === 'Escape') {
+      stopListening();
+      const zoomKey = settings.zoomKeybind || 'Control+Shift+Z';
+      btn.textContent = zoomKey.replace(/\+/g, ' + ');
+      return;
+    }
+
+    const parts = [];
+    if (e.ctrlKey) parts.push('Control');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.metaKey) parts.push('Super');
+
+    const ignored = ['Control', 'Alt', 'Shift', 'Meta'];
+    if (ignored.includes(e.key)) return;
+
+    let mainKey = e.key;
+    if (mainKey === ' ') mainKey = 'Space';
+    if (mainKey.length === 1 && mainKey >= 'a' && mainKey <= 'z') {
+      mainKey = mainKey.toUpperCase();
+    }
+    parts.push(mainKey);
+
+    const accel = parts.join('+');
+    if (parts.length < 2) return;
+
+    stopListening();
+    btn.textContent = formatHotkey(accel);
+    await window.crosshairAPI.updateSetting('zoomKeybind', accel);
+    settings.zoomKeybind = accel;
   });
 }

@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('crosshairAPI', {
   saveProfile: (name, profileData) => ipcRenderer.invoke('save-profile', name, profileData),
   loadProfile: (name) => ipcRenderer.invoke('load-profile', name),
   deleteProfile: (name) => ipcRenderer.invoke('delete-profile', name),
+  getZoomSettings: () => ipcRenderer.invoke('get-zoom-settings'),
+  updateZoomSetting: (key, value) => ipcRenderer.invoke('update-zoom-setting', key, value),
   onUpdateCrosshair: (callback) => {
     ipcRenderer.on('update-crosshair', (event, data) => callback(data));
   }

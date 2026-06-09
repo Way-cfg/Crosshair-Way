@@ -23,6 +23,25 @@ const store = new Store({
     outlineColor: '#000000',
     imageSize: 60,
     hotkey: 'Control+Shift+H',
+    zoomModeEnabled: false,
+    zoomTriggerType: 'toggle',
+    zoomKeybind: 'Control+Shift+Z',
+    zoomProfileSettings: {
+      crosshairMode: 'generator',
+      shape: 'cross',
+      color: '#ff6600',
+      size: 20,
+      thickness: 3,
+      gap: 6,
+      opacity: 0.8,
+      offsetX: 0,
+      offsetY: 0,
+      customImagePath: '',
+      outlineEnabled: false,
+      outlineThickness: 1,
+      outlineColor: '#000000',
+      imageSize: 60
+    },
     activeProfile: 'Default',
     profiles: {
       Default: {
@@ -49,6 +68,7 @@ let controlPanel = null;
 let overlay = null;
 let tray = null;
 let overlayVisible = store.get('visible');
+let zoomActive = false;
 
 function createControlPanel() {
   controlPanel = new BrowserWindow({
@@ -169,18 +189,6 @@ function toggleOverlay() {
   }
 }
 
-function registerHotkey(key) {
-  globalShortcut.unregisterAll();
-  if (!key || typeof key !== 'string') return;
-  try {
-    globalShortcut.register(key, () => {
-      toggleOverlay();
-    });
-  } catch (e) {
-    console.error('Failed to register hotkey:', e);
-  }
-}
-
 function updateOverlayPosition() {
   if (!overlay) return;
   const displays = screen.getAllDisplays();
@@ -194,13 +202,60 @@ function updateOverlayPosition() {
   overlay.setPosition(centerX - 200 + offsetX, centerY - 200 + offsetY);
 }
 
+function registerHotkey(key) {
+  if (!key || typeof key !== 'string') return;
+  try {
+    globalShortcut.register(key, () => {
+      toggleOverlay();
+    });
+  } catch (e) {
+    console.error('Failed to register hotkey:', e);
+  }
+}
+
+function registerZoomHotkey() {
+  const key = store.get('zoomKeybind');
+  if (!key || typeof key !== 'string') return;
+  try {
+    globalShortcut.register(key, handleZoomTrigger);
+  } catch (e) {
+    console.error('Failed to register zoom hotkey:', e);
+  }
+}
+
+function registerAllHotkeys() {
+  globalShortcut.unregisterAll();
+  registerHotkey(store.get('hotkey'));
+  if (store.get('zoomModeEnabled')) {
+    registerZoomHotkey();
+  }
+}
+
+function handleZoomTrigger() {
+  if (!store.get('zoomModeEnabled')) return;
+  zoomActive ? applyNormalProfile() : applyZoomProfile();
+}
+
+function applyZoomProfile() {
+  zoomActive = true;
+  if (!overlay) return;
+  const zoomSettings = store.get('zoomProfileSettings');
+  overlay.webContents.send('update-crosshair', { ...store.store, ...zoomSettings });
+}
+
+function applyNormalProfile() {
+  zoomActive = false;
+  if (!overlay) return;
+  overlay.webContents.send('update-crosshair', store.store);
+}
+
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   createControlPanel();
   createOverlay();
   createTray();
 
-  registerHotkey(store.get('hotkey'));
+  registerAllHotkeys();
 
   app.setLoginItemSettings({
     openAtLogin: store.get('autoStart')
@@ -217,6 +272,7 @@ app.on('before-quit', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  uIOhook.stop();
 });
 
 ipcMain.handle('get-settings', () => {
@@ -235,6 +291,12 @@ ipcMain.handle('update-setting', (event, key, value) => {
   }
   if (key === 'autoStart') {
     app.setLoginItemSettings({ openAtLogin: value });
+  }
+  if (key === 'zoomModeEnabled' || key === 'zoomKeybind') {
+    registerAllHotkeys();
+    if (!store.get('zoomModeEnabled') && zoomActive) {
+      applyNormalProfile();
+    }
   }
   return true;
 });
@@ -279,7 +341,7 @@ ipcMain.handle('get-hotkey', () => {
 
 ipcMain.handle('set-hotkey', (event, key) => {
   store.set('hotkey', key);
-  registerHotkey(key);
+  registerAllHotkeys();
   return true;
 });
 
@@ -342,6 +404,20 @@ ipcMain.handle('delete-profile', (event, name) => {
   delete profiles[name];
   store.set('profiles', profiles);
   store.set('activeProfile', 'Default');
+  return true;
+});
+
+ipcMain.handle('get-zoom-settings', () => {
+  return store.get('zoomProfileSettings');
+});
+
+ipcMain.handle('update-zoom-setting', (event, key, value) => {
+  const zoomSettings = store.get('zoomProfileSettings');
+  zoomSettings[key] = value;
+  store.set('zoomProfileSettings', zoomSettings);
+  if (overlay) {
+    overlay.webContents.send('update-crosshair', { ...store.store, ...zoomSettings });
+  }
   return true;
 });
 

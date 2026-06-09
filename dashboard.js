@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applySettingsToUI();
   setupEventListeners();
   loadMonitors();
+  loadProfileDropdown();
 });
 
 function applySettingsToUI() {
@@ -191,6 +192,31 @@ function setupEventListeners() {
   document.getElementById('githubProfileBtn').addEventListener('click', () => {
     window.crosshairAPI.openExternal('https://github.com/Way-cfg');
   });
+
+  document.getElementById('profileSelect').addEventListener('change', async (e) => {
+    const name = e.target.value;
+    if (!name) return;
+    await switchProfile(name);
+  });
+
+  document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+    const input = document.getElementById('profileNameInput');
+    const name = input.value.trim();
+    if (!name) return;
+    const profileData = readCurrentSettings();
+    await window.crosshairAPI.saveProfile(name, profileData);
+    input.value = '';
+    await loadProfileDropdown();
+  });
+
+  document.getElementById('deleteProfileBtn').addEventListener('click', async () => {
+    const select = document.getElementById('profileSelect');
+    const name = select.value;
+    if (name === 'Default') return;
+    await window.crosshairAPI.deleteProfile(name);
+    await loadProfileDropdown();
+    await switchProfile('Default');
+  });
 }
 
 function toggleCrosshairMode(mode) {
@@ -216,6 +242,49 @@ async function loadMonitors() {
     }
     select.appendChild(opt);
   });
+}
+
+async function loadProfileDropdown() {
+  const data = await window.crosshairAPI.getProfiles();
+  const select = document.getElementById('profileSelect');
+  const currentVal = select.value;
+  select.innerHTML = '';
+  Object.keys(data.profiles).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === data.activeProfile) opt.selected = true;
+    select.appendChild(opt);
+  });
+  document.getElementById('deleteProfileBtn').disabled = (data.activeProfile === 'Default');
+}
+
+function readCurrentSettings() {
+  return {
+    crosshairMode: document.querySelector('.mode-btn.active')?.dataset.mode || 'generator',
+    shape: document.querySelector('.shape-btn.active')?.dataset.shape || 'cross',
+    color: document.getElementById('colorPicker').value,
+    size: Number(document.getElementById('sizeSlider').value),
+    thickness: Number(document.getElementById('thicknessSlider').value),
+    gap: Number(document.getElementById('gapSlider').value),
+    opacity: Number(document.getElementById('opacitySlider').value) / 100,
+    offsetX: Number(document.getElementById('offsetXSlider').value),
+    offsetY: Number(document.getElementById('offsetYSlider').value),
+    customImagePath: (document.getElementById('imagePathDisplay').textContent !== 'No image selected')
+      ? document.getElementById('imagePathDisplay').textContent : '',
+    outlineEnabled: document.getElementById('outlineToggle').checked,
+    outlineThickness: Number(document.getElementById('outlineThicknessSlider').value),
+    outlineColor: document.getElementById('outlineColorPicker').value,
+    imageSize: Number(document.getElementById('imageSizeSlider').value)
+  };
+}
+
+async function switchProfile(name) {
+  const success = await window.crosshairAPI.loadProfile(name);
+  if (!success) return;
+  settings = await window.crosshairAPI.getSettings();
+  applySettingsToUI();
+  document.getElementById('deleteProfileBtn').disabled = (name === 'Default');
 }
 
 function updateSliderFill(el) {

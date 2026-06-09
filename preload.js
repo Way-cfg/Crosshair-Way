@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('crosshairAPI', {
   validateHotkey: (key) => ipcRenderer.invoke('validate-hotkey', key),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   forceOverlaySync: () => ipcRenderer.invoke('force-overlay-sync'),
+  getProfiles: () => ipcRenderer.invoke('get-profiles'),
+  saveProfile: (name, profileData) => ipcRenderer.invoke('save-profile', name, profileData),
+  loadProfile: (name) => ipcRenderer.invoke('load-profile', name),
+  deleteProfile: (name) => ipcRenderer.invoke('delete-profile', name),
   onUpdateCrosshair: (callback) => {
     ipcRenderer.on('update-crosshair', (event, data) => callback(data));
   }

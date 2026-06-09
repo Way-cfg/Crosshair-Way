@@ -520,6 +520,90 @@ input:checked + .slider:before {
   background: var(--text-secondary);
 }
 
+/* Profile Manager */
+.profile-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.profile-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-row select {
+  flex: 1;
+}
+
+.profile-input {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.profile-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 102, 0, 0.2);
+}
+
+.profile-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.profile-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.profile-btn.save {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.profile-btn.save:hover {
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.profile-btn.delete {
+  background: transparent;
+  color: #ff4444;
+  border: 1px solid #ff4444;
+}
+
+.profile-btn.delete:hover {
+  background: rgba(255, 68, 68, 0.1);
+  box-shadow: 0 0 12px rgba(255, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.profile-btn.delete:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* About Tab */
 .about-container {
   display: flex;

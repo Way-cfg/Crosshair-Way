@@ -22,7 +22,26 @@ const store = new Store({
     outlineThickness: 1,
     outlineColor: '#000000',
     imageSize: 60,
-    hotkey: 'Control+Shift+H'
+    hotkey: 'Control+Shift+H',
+    activeProfile: 'Default',
+    profiles: {
+      Default: {
+        crosshairMode: 'generator',
+        shape: 'cross',
+        color: '#ff6600',
+        size: 30,
+        thickness: 3,
+        gap: 6,
+        opacity: 0.8,
+        offsetX: 0,
+        offsetY: 0,
+        customImagePath: '',
+        outlineEnabled: false,
+        outlineThickness: 1,
+        outlineColor: '#000000',
+        imageSize: 60
+      }
+    }
   }
 });
 
@@ -284,6 +303,45 @@ ipcMain.handle('force-overlay-sync', () => {
   if (overlay) {
     overlay.webContents.send('update-crosshair', store.store);
   }
+  return true;
+});
+
+ipcMain.handle('get-profiles', () => {
+  return {
+    profiles: store.get('profiles'),
+    activeProfile: store.get('activeProfile')
+  };
+});
+
+ipcMain.handle('save-profile', (event, name, profileData) => {
+  const profiles = store.get('profiles');
+  profiles[name] = profileData;
+  store.set('profiles', profiles);
+  store.set('activeProfile', name);
+  return true;
+});
+
+ipcMain.handle('load-profile', (event, name) => {
+  const profiles = store.get('profiles');
+  const profile = profiles[name];
+  if (!profile) return false;
+  store.set('activeProfile', name);
+  Object.keys(profile).forEach(key => {
+    store.set(key, profile[key]);
+  });
+  updateOverlayPosition();
+  if (overlay) {
+    overlay.webContents.send('update-crosshair', store.store);
+  }
+  return true;
+});
+
+ipcMain.handle('delete-profile', (event, name) => {
+  if (name === 'Default') return false;
+  const profiles = store.get('profiles');
+  delete profiles[name];
+  store.set('profiles', profiles);
+  store.set('activeProfile', 'Default');
   return true;
 });
 

@@ -92,9 +92,12 @@ function createOverlay() {
 }
 
 function createTray() {
-  const iconSize = 16;
-  const canvas = nativeImage.createEmpty();
-  tray = new Tray(canvas);
+  const trayIconPath = path.join(__dirname, 'assets', 'icons', 'icon.ico');
+  let trayIcon = nativeImage.createFromPath(trayIconPath);
+  if (trayIcon.isEmpty()) {
+    trayIcon = nativeImage.createEmpty();
+  }
+  tray = new Tray(trayIcon);
 
   const contextMenu = Menu.buildFromTemplate([
     {

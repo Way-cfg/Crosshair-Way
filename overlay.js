@@ -9,6 +9,7 @@ let state = {
   outlineEnabled: false,
   outlineThickness: 1,
   outlineColor: '#000000',
+  imageSize: 60,
   customImagePath: ''
 };
 

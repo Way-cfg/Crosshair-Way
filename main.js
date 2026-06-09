@@ -21,6 +21,7 @@ const store = new Store({
     outlineEnabled: false,
     outlineThickness: 1,
     outlineColor: '#000000',
+    imageSize: 60,
     hotkey: 'Control+Shift+H'
   }
 });
@@ -208,7 +209,7 @@ ipcMain.handle('update-setting', (event, key, value) => {
   if (key === 'monitorIndex' || key === 'offsetX' || key === 'offsetY') {
     updateOverlayPosition();
   }
-  if (key === 'crosshairMode' || key === 'shape' || key === 'color' || key === 'size' || key === 'thickness' || key === 'gap' || key === 'opacity' || key === 'customImagePath' || key === 'outlineEnabled' || key === 'outlineThickness' || key === 'outlineColor') {
+  if (key === 'crosshairMode' || key === 'shape' || key === 'color' || key === 'size' || key === 'thickness' || key === 'gap' || key === 'opacity' || key === 'customImagePath' || key === 'outlineEnabled' || key === 'outlineThickness' || key === 'outlineColor' || key === 'imageSize') {
     if (overlay) {
       overlay.webContents.send('update-crosshair', store.store);
     }

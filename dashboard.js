@@ -18,8 +18,7 @@ function applySettingsToUI() {
   setText('offsetXValue', settings.offsetX + 'px');
   setValue('offsetYSlider', settings.offsetY);
   setText('offsetYValue', settings.offsetY + 'px');
-  setValue('imageSizeSlider', 60);
-  setText('imageSizeValue', '60px');
+  applySlider('imageSizeSlider', 'imageSizeValue', Number(settings.imageSize) || 60, 'px');
 
   document.getElementById('visibilityToggle').checked = settings.visible;
 

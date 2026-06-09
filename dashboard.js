@@ -10,12 +10,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 function applySettingsToUI() {
   setValue('sizeSlider', settings.size);
   setText('sizeValue', settings.size + 'px');
+  updateSliderFill(document.getElementById('sizeSlider'));
   setValue('thicknessSlider', settings.thickness);
   setText('thicknessValue', settings.thickness + 'px');
+  updateSliderFill(document.getElementById('thicknessSlider'));
   setValue('gapSlider', settings.gap);
   setText('gapValue', settings.gap + 'px');
+  updateSliderFill(document.getElementById('gapSlider'));
   setValue('opacitySlider', Math.round(settings.opacity * 100));
   setText('opacityValue', Math.round(settings.opacity * 100) + '%');
+  updateSliderFill(document.getElementById('opacitySlider'));
   setValue('colorPicker', settings.color);
   setValue('colorHex', settings.color);
   setValue('offsetXSlider', settings.offsetX);
@@ -52,6 +56,7 @@ function applySettingsToUI() {
   document.getElementById('outlineToggle').checked = settings.outlineEnabled || false;
   setValue('outlineThicknessSlider', settings.outlineThickness || 1);
   setText('outlineThicknessValue', (settings.outlineThickness || 1) + 'px');
+  updateSliderFill(document.getElementById('outlineThicknessSlider'));
   setValue('outlineColorPicker', settings.outlineColor || '#000000');
   setValue('outlineColorHex', settings.outlineColor || '#000000');
   toggleOutlineControls(settings.outlineEnabled || false);
@@ -119,6 +124,7 @@ function setupEventListeners() {
     slider.addEventListener('input', () => {
       let val = parseFloat(slider.value);
       setText(displayId, val + suffix);
+      updateSliderFill(slider);
       const saveVal = transform ? transform(val) : val;
       window.crosshairAPI.updateSetting(key, saveVal);
     });
@@ -220,6 +226,14 @@ async function loadMonitors() {
   });
 }
 
+function updateSliderFill(el) {
+  const min = parseFloat(el.min) || 0;
+  const max = parseFloat(el.max) || 100;
+  const val = parseFloat(el.value) || 0;
+  const pct = ((val - min) / (max - min)) * 100;
+  el.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--bg-tertiary) ${pct}%, var(--bg-tertiary) 100%)`;
+}
+
 function generateCode() {
   const s = settings;
   const colorHex = s.color.replace('#', '');
@@ -292,28 +306,42 @@ async function importCode() {
   }
   input.value = '';
   Object.assign(settings, parsed);
-  applySettingsToUI();
 
   const shapeBtn = document.querySelector(`.shape-btn[data-shape="${parsed.shape}"]`);
   if (shapeBtn) shapeBtn.click();
 
-  ['sizeSlider', 'thicknessSlider', 'gapSlider', 'opacitySlider', 'outlineThicknessSlider'].forEach(id => {
+  const s = parsed;
+  const sliderDefs = [
+    { id: 'sizeSlider', displayId: 'sizeValue', val: s.size, suffix: 'px' },
+    { id: 'thicknessSlider', displayId: 'thicknessValue', val: s.thickness, suffix: 'px' },
+    { id: 'gapSlider', displayId: 'gapValue', val: s.gap, suffix: 'px' },
+    { id: 'opacitySlider', displayId: 'opacityValue', val: Math.round(s.opacity * 100), suffix: '%' },
+    { id: 'outlineThicknessSlider', displayId: 'outlineThicknessValue', val: s.outlineThickness, suffix: 'px' }
+  ];
+  for (const { id, displayId, val, suffix } of sliderDefs) {
     const el = document.getElementById(id);
-    if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+    if (!el) continue;
+    el.value = val;
+    setText(displayId, val + suffix);
+    updateSliderFill(el);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 
-  ['colorPicker', 'outlineColorPicker'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  document.getElementById('colorPicker').value = s.color;
+  document.getElementById('colorHex').value = s.color;
+  document.getElementById('colorPicker').dispatchEvent(new Event('input', { bubbles: true }));
+  document.getElementById('colorHex').dispatchEvent(new Event('change', { bubbles: true }));
 
-  ['colorHex', 'outlineColorHex'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.dispatchEvent(new Event('change', { bubbles: true }));
-  });
+  document.getElementById('outlineColorPicker').value = s.outlineColor;
+  document.getElementById('outlineColorHex').value = s.outlineColor;
+  document.getElementById('outlineColorPicker').dispatchEvent(new Event('input', { bubbles: true }));
+  document.getElementById('outlineColorHex').dispatchEvent(new Event('change', { bubbles: true }));
 
-  const ot = document.getElementById('outlineToggle');
-  if (ot) ot.dispatchEvent(new Event('change', { bubbles: true }));
+  document.getElementById('outlineToggle').checked = s.outlineEnabled;
+  document.getElementById('outlineToggle').dispatchEvent(new Event('change', { bubbles: true }));
+
+  document.body.offsetHeight;
 
   await window.crosshairAPI.forceOverlaySync();
 

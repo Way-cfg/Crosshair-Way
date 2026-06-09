@@ -293,10 +293,30 @@ async function importCode() {
   input.value = '';
   Object.assign(settings, parsed);
   applySettingsToUI();
-  const keys = ['shape', 'size', 'thickness', 'gap', 'opacity', 'color', 'outlineEnabled', 'outlineThickness', 'outlineColor'];
-  for (const key of keys) {
-    await window.crosshairAPI.updateSetting(key, parsed[key]);
-  }
+
+  const shapeBtn = document.querySelector(`.shape-btn[data-shape="${parsed.shape}"]`);
+  if (shapeBtn) shapeBtn.click();
+
+  ['sizeSlider', 'thicknessSlider', 'gapSlider', 'opacitySlider', 'outlineThicknessSlider'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  ['colorPicker', 'outlineColorPicker'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  ['colorHex', 'outlineColorHex'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  const ot = document.getElementById('outlineToggle');
+  if (ot) ot.dispatchEvent(new Event('change', { bubbles: true }));
+
+  await window.crosshairAPI.forceOverlaySync();
+
   const fb = document.getElementById('exportFeedback');
   fb.textContent = 'Imported!';
   fb.classList.remove('hidden');

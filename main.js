@@ -279,6 +279,13 @@ ipcMain.handle('open-external', (event, url) => {
   return true;
 });
 
+ipcMain.handle('force-overlay-sync', () => {
+  if (overlay) {
+    overlay.webContents.send('update-crosshair', store.store);
+  }
+  return true;
+});
+
 ipcMain.on('update-overlay-crosshair', (event, data) => {
   if (overlay) {
     overlay.webContents.send('update-crosshair', data);

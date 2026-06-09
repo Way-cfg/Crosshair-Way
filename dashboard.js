@@ -8,18 +8,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function applySettingsToUI() {
-  setValue('sizeSlider', settings.size);
-  setText('sizeValue', settings.size + 'px');
-  updateSliderFill(document.getElementById('sizeSlider'));
-  setValue('thicknessSlider', settings.thickness);
-  setText('thicknessValue', settings.thickness + 'px');
-  updateSliderFill(document.getElementById('thicknessSlider'));
-  setValue('gapSlider', settings.gap);
-  setText('gapValue', settings.gap + 'px');
-  updateSliderFill(document.getElementById('gapSlider'));
-  setValue('opacitySlider', Math.round(settings.opacity * 100));
-  setText('opacityValue', Math.round(settings.opacity * 100) + '%');
-  updateSliderFill(document.getElementById('opacitySlider'));
+  applySlider('sizeSlider', 'sizeValue', Number(settings.size), 'px');
+  applySlider('thicknessSlider', 'thicknessValue', Number(settings.thickness), 'px');
+  applySlider('gapSlider', 'gapValue', Number(settings.gap), 'px');
+  applySlider('opacitySlider', 'opacityValue', Math.round(Number(settings.opacity) * 100), '%');
   setValue('colorPicker', settings.color);
   setValue('colorHex', settings.color);
   setValue('offsetXSlider', settings.offsetX);
@@ -54,9 +46,7 @@ function applySettingsToUI() {
   document.getElementById('hotkeyBindBtn').textContent = hotkey.replace(/\+/g, ' + ');
 
   document.getElementById('outlineToggle').checked = settings.outlineEnabled || false;
-  setValue('outlineThicknessSlider', settings.outlineThickness || 1);
-  setText('outlineThicknessValue', (settings.outlineThickness || 1) + 'px');
-  updateSliderFill(document.getElementById('outlineThicknessSlider'));
+  applySlider('outlineThicknessSlider', 'outlineThicknessValue', Number(settings.outlineThickness) || 1, 'px');
   setValue('outlineColorPicker', settings.outlineColor || '#000000');
   setValue('outlineColorHex', settings.outlineColor || '#000000');
   toggleOutlineControls(settings.outlineEnabled || false);
@@ -65,6 +55,15 @@ function applySettingsToUI() {
 function setValue(id, val) {
   const el = document.getElementById(id);
   if (el) el.value = val;
+}
+
+function applySlider(id, displayId, raw, suffix) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const val = Number(raw);
+  el.value = val;
+  setText(displayId, val + suffix);
+  requestAnimationFrame(() => updateSliderFill(el));
 }
 
 function setText(id, val) {

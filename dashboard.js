@@ -305,54 +305,8 @@ async function importCode() {
     return;
   }
   input.value = '';
-  Object.assign(settings, parsed);
-
-  const shapeBtn = document.querySelector(`.shape-btn[data-shape="${parsed.shape}"]`);
-  if (shapeBtn) shapeBtn.click();
-
-  const s = parsed;
-  const sliderDefs = [
-    { id: 'sizeSlider', displayId: 'sizeValue', val: s.size, suffix: 'px' },
-    { id: 'thicknessSlider', displayId: 'thicknessValue', val: s.thickness, suffix: 'px' },
-    { id: 'gapSlider', displayId: 'gapValue', val: s.gap, suffix: 'px' },
-    { id: 'opacitySlider', displayId: 'opacityValue', val: Math.round(s.opacity * 100), suffix: '%' },
-    { id: 'outlineThicknessSlider', displayId: 'outlineThicknessValue', val: s.outlineThickness, suffix: 'px' }
-  ];
-  for (const { id, displayId, val, suffix } of sliderDefs) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    el.value = val;
-    setText(displayId, val + suffix);
-    updateSliderFill(el);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  document.getElementById('colorPicker').value = s.color;
-  document.getElementById('colorHex').value = s.color;
-  document.getElementById('colorPicker').dispatchEvent(new Event('input', { bubbles: true }));
-  document.getElementById('colorHex').dispatchEvent(new Event('change', { bubbles: true }));
-
-  document.getElementById('outlineColorPicker').value = s.outlineColor;
-  document.getElementById('outlineColorHex').value = s.outlineColor;
-  document.getElementById('outlineColorPicker').dispatchEvent(new Event('input', { bubbles: true }));
-  document.getElementById('outlineColorHex').dispatchEvent(new Event('change', { bubbles: true }));
-
-  document.getElementById('outlineToggle').checked = s.outlineEnabled;
-  document.getElementById('outlineToggle').dispatchEvent(new Event('change', { bubbles: true }));
-
-  document.body.offsetHeight;
-
-  await window.crosshairAPI.forceOverlaySync();
-
-  const fb = document.getElementById('exportFeedback');
-  fb.textContent = 'Imported!';
-  fb.classList.remove('hidden');
-  fb.classList.add('visible');
-  setTimeout(() => {
-    fb.classList.remove('visible');
-    fb.classList.add('hidden');
-  }, 1800);
+  await window.crosshairAPI.importSettings(parsed);
+  window.location.reload();
 }
 
 function formatHotkey(accel) {

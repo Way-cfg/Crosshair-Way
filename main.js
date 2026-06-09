@@ -279,6 +279,19 @@ ipcMain.handle('open-external', (event, url) => {
   return true;
 });
 
+ipcMain.handle('import-settings', (event, data) => {
+  const crosshairKeys = ['shape', 'size', 'thickness', 'gap', 'opacity', 'color', 'outlineEnabled', 'outlineThickness', 'outlineColor'];
+  for (const key of crosshairKeys) {
+    if (data[key] !== undefined) {
+      store.set(key, data[key]);
+    }
+  }
+  if (overlay) {
+    overlay.webContents.send('update-crosshair', store.store);
+  }
+  return true;
+});
+
 ipcMain.handle('force-overlay-sync', () => {
   if (overlay) {
     overlay.webContents.send('update-crosshair', store.store);

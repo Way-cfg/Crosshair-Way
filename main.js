@@ -20,7 +20,8 @@ const store = new Store({
     autoStart: false,
     outlineEnabled: false,
     outlineThickness: 1,
-    outlineColor: '#000000'
+    outlineColor: '#000000',
+    hotkey: 'Control+Shift+H'
   }
 });
 
@@ -148,6 +149,18 @@ function toggleOverlay() {
   }
 }
 
+function registerHotkey(key) {
+  globalShortcut.unregisterAll();
+  if (!key || typeof key !== 'string') return;
+  try {
+    globalShortcut.register(key, () => {
+      toggleOverlay();
+    });
+  } catch (e) {
+    console.error('Failed to register hotkey:', e);
+  }
+}
+
 function updateOverlayPosition() {
   if (!overlay) return;
   const displays = screen.getAllDisplays();
@@ -167,9 +180,7 @@ app.whenReady().then(() => {
   createOverlay();
   createTray();
 
-  globalShortcut.register('Control+Shift+H', () => {
-    toggleOverlay();
-  });
+  registerHotkey(store.get('hotkey'));
 
   app.setLoginItemSettings({
     openAtLogin: store.get('autoStart')
@@ -240,6 +251,25 @@ ipcMain.handle('pick-image', async () => {
 
 ipcMain.handle('get-crosshair-state', () => {
   return store.store;
+});
+
+ipcMain.handle('get-hotkey', () => {
+  return store.get('hotkey');
+});
+
+ipcMain.handle('set-hotkey', (event, key) => {
+  store.set('hotkey', key);
+  registerHotkey(key);
+  return true;
+});
+
+ipcMain.handle('validate-hotkey', (event, key) => {
+  if (!key || typeof key !== 'string') return false;
+  const parts = key.split('+');
+  if (parts.length < 2) return false;
+  const mods = ['Command', 'Control', 'CommandOrControl', 'Alt', 'Shift', 'Super'];
+  const hasMod = parts.slice(0, -1).some(p => mods.includes(p));
+  return hasMod;
 });
 
 ipcMain.on('update-overlay-crosshair', (event, data) => {

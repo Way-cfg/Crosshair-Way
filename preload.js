@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('crosshairAPI', {
   getMonitors: () => ipcRenderer.invoke('get-monitors'),
   pickImage: () => ipcRenderer.invoke('pick-image'),
   getCrosshairState: () => ipcRenderer.invoke('get-crosshair-state'),
+  getHotkey: () => ipcRenderer.invoke('get-hotkey'),
+  setHotkey: (key) => ipcRenderer.invoke('set-hotkey', key),
+  validateHotkey: (key) => ipcRenderer.invoke('validate-hotkey', key),
   onUpdateCrosshair: (callback) => {
     ipcRenderer.on('update-crosshair', (event, data) => callback(data));
   }

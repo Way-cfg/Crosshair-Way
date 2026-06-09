@@ -46,6 +46,9 @@ function applySettingsToUI() {
 
   document.getElementById('autoStartToggle').checked = settings.autoStart || false;
 
+  const hotkey = settings.hotkey || 'Control+Shift+H';
+  document.getElementById('hotkeyBindBtn').textContent = hotkey.replace(/\+/g, ' + ');
+
   document.getElementById('outlineToggle').checked = settings.outlineEnabled || false;
   setValue('outlineThicknessSlider', settings.outlineThickness || 1);
   setText('outlineThicknessValue', (settings.outlineThickness || 1) + 'px');
@@ -160,6 +163,8 @@ function setupEventListeners() {
     window.crosshairAPI.updateSetting('autoStart', e.target.checked);
   });
 
+  setupHotkeyBinding();
+
   document.getElementById('outlineToggle').addEventListener('change', (e) => {
     toggleOutlineControls(e.target.checked);
     window.crosshairAPI.updateSetting('outlineEnabled', e.target.checked);
@@ -202,5 +207,62 @@ async function loadMonitors() {
       opt.selected = true;
     }
     select.appendChild(opt);
+  });
+}
+
+function formatHotkey(accel) {
+  return accel.replace(/\+/g, ' + ');
+}
+
+function setupHotkeyBinding() {
+  const btn = document.getElementById('hotkeyBindBtn');
+  let listening = false;
+
+  function startListening() {
+    listening = true;
+    btn.classList.add('listening');
+    btn.textContent = 'Press keys to bind...';
+  }
+
+  function stopListening() {
+    listening = false;
+    btn.classList.remove('listening');
+  }
+
+  btn.addEventListener('click', startListening);
+
+  document.addEventListener('keydown', async (e) => {
+    if (!listening) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.key === 'Escape') {
+      stopListening();
+      btn.textContent = formatHotkey(settings.hotkey || 'Control+Shift+H');
+      return;
+    }
+
+    const parts = [];
+    if (e.ctrlKey) parts.push('Control');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.metaKey) parts.push('Super');
+
+    const ignored = ['Control', 'Alt', 'Shift', 'Meta'];
+    if (ignored.includes(e.key)) return;
+
+    let mainKey = e.key;
+    if (mainKey === ' ') mainKey = 'Space';
+    if (mainKey.length === 1 && mainKey >= 'a' && mainKey <= 'z') {
+      mainKey = mainKey.toUpperCase();
+    }
+    parts.push(mainKey);
+
+    const accel = parts.join('+');
+    if (parts.length < 2) return;
+
+    stopListening();
+    btn.textContent = formatHotkey(accel);
+    window.crosshairAPI.setHotkey(accel);
   });
 }

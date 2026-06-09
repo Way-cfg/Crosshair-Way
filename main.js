@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const Store = require('electron-store');
@@ -270,6 +270,13 @@ ipcMain.handle('validate-hotkey', (event, key) => {
   const mods = ['Command', 'Control', 'CommandOrControl', 'Alt', 'Shift', 'Super'];
   const hasMod = parts.slice(0, -1).some(p => mods.includes(p));
   return hasMod;
+});
+
+ipcMain.handle('open-external', (event, url) => {
+  if (url && typeof url === 'string') {
+    shell.openExternal(url);
+  }
+  return true;
 });
 
 ipcMain.on('update-overlay-crosshair', (event, data) => {

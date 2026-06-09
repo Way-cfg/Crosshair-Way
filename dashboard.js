@@ -183,6 +183,10 @@ function setupEventListeners() {
       window.crosshairAPI.updateSetting('outlineColor', color);
     }
   });
+
+  document.getElementById('githubProfileBtn').addEventListener('click', () => {
+    window.crosshairAPI.openExternal('https://github.com/Way-cfg');
+  });
 }
 
 function toggleCrosshairMode(mode) {

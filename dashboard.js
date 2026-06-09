@@ -187,6 +187,12 @@ function setupEventListeners() {
   document.getElementById('githubProfileBtn').addEventListener('click', () => {
     window.crosshairAPI.openExternal('https://github.com/Way-cfg');
   });
+
+  document.getElementById('exportCodeBtn').addEventListener('click', exportCode);
+  document.getElementById('importCodeBtn').addEventListener('click', importCode);
+  document.getElementById('importCodeInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') importCode();
+  });
 }
 
 function toggleCrosshairMode(mode) {
@@ -212,6 +218,93 @@ async function loadMonitors() {
     }
     select.appendChild(opt);
   });
+}
+
+function generateCode() {
+  const s = settings;
+  const colorHex = s.color.replace('#', '');
+  const outlineColorHex = (s.outlineColor || '#000000').replace('#', '');
+  const opacityPct = Math.round((s.opacity || 1) * 100);
+  const outline = s.outlineEnabled ? 1 : 0;
+  const thick = s.outlineThickness || 1;
+  return `WAY-${s.shape}-${s.size}-${colorHex}-${s.thickness}-${s.gap}-${opacityPct}-${outline}-${thick}-${outlineColorHex}`;
+}
+
+function parseCode(code) {
+  const parts = code.trim().split('-');
+  if (parts.length !== 10 || parts[0] !== 'WAY') return null;
+  const [_, shape, size, colorHex, thickness, gap, opacity, outlineOn, outlineThick, outlineColorHex] = parts;
+  const validShapes = ['cross', 'dot', 'circle', 'tshape'];
+  if (!validShapes.includes(shape)) return null;
+  const sizeNum = parseInt(size);
+  if (isNaN(sizeNum) || sizeNum < 10 || sizeNum > 100) return null;
+  if (!/^[0-9a-fA-F]{6}$/.test(colorHex)) return null;
+  const thickNum = parseInt(thickness);
+  if (isNaN(thickNum) || thickNum < 1 || thickNum > 12) return null;
+  const gapNum = parseInt(gap);
+  if (isNaN(gapNum) || gapNum < 0 || gapNum > 30) return null;
+  const opacityNum = parseInt(opacity);
+  if (isNaN(opacityNum) || opacityNum < 5 || opacityNum > 100) return null;
+  const outlineNum = parseInt(outlineOn);
+  if (outlineNum !== 0 && outlineNum !== 1) return null;
+  const oThickNum = parseInt(outlineThick);
+  if (isNaN(oThickNum) || oThickNum < 1 || oThickNum > 5) return null;
+  if (!/^[0-9a-fA-F]{6}$/.test(outlineColorHex)) return null;
+  return {
+    shape, size: sizeNum, thickness: thickNum, gap: gapNum,
+    opacity: opacityNum / 100, color: '#' + colorHex,
+    outlineEnabled: outlineNum === 1, outlineThickness: oThickNum,
+    outlineColor: '#' + outlineColorHex
+  };
+}
+
+async function exportCode() {
+  const code = generateCode();
+  try {
+    await navigator.clipboard.writeText(code);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+  const fb = document.getElementById('exportFeedback');
+  fb.textContent = 'Copied!';
+  fb.classList.remove('hidden');
+  fb.classList.add('visible');
+  setTimeout(() => {
+    fb.classList.remove('visible');
+    fb.classList.add('hidden');
+  }, 1800);
+}
+
+async function importCode() {
+  const input = document.getElementById('importCodeInput');
+  const code = input.value.trim();
+  if (!code) return;
+  const parsed = parseCode(code);
+  if (!parsed) {
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 800);
+    return;
+  }
+  input.value = '';
+  Object.assign(settings, parsed);
+  applySettingsToUI();
+  const keys = ['shape', 'size', 'thickness', 'gap', 'opacity', 'color', 'outlineEnabled', 'outlineThickness', 'outlineColor'];
+  for (const key of keys) {
+    await window.crosshairAPI.updateSetting(key, parsed[key]);
+  }
+  const fb = document.getElementById('exportFeedback');
+  fb.textContent = 'Imported!';
+  fb.classList.remove('hidden');
+  fb.classList.add('visible');
+  setTimeout(() => {
+    fb.classList.remove('visible');
+    fb.classList.add('hidden');
+  }, 1800);
 }
 
 function formatHotkey(accel) {

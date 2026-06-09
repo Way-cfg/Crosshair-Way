@@ -285,6 +285,66 @@ input:checked + .slider:before {
   letter-spacing: 0.3px;
 }
 
+/* Share & Import */
+.share-import-row {
+  display: flex;
+  gap: 8px;
+}
+
+.code-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 0;
+}
+
+.code-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 102, 0, 0.2);
+}
+
+.code-input.error {
+  border-color: #ff3333;
+  box-shadow: 0 0 12px rgba(255, 51, 51, 0.3);
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+
+.export-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.export-feedback {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.export-feedback.visible {
+  opacity: 1;
+}
+
+.export-feedback.hidden {
+  opacity: 0;
+}
+
 /* Shape Selector */
 .shape-selector {
   display: flex;

@@ -1,0 +1,242 @@
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const Store = require('electron-store');
+
+const store = new Store({
+  defaults: {
+    crosshairMode: 'generator',
+    shape: 'cross',
+    color: '#00ff66',
+    size: 30,
+    thickness: 3,
+    gap: 6,
+    opacity: 0.8,
+    offsetX: 0,
+    offsetY: 0,
+    customImagePath: '',
+    monitorIndex: 0,
+    visible: true,
+    autoStart: false
+  }
+});
+
+let controlPanel = null;
+let overlay = null;
+let tray = null;
+let overlayVisible = store.get('visible');
+
+function createControlPanel() {
+  controlPanel = new BrowserWindow({
+    width: 860,
+    height: 680,
+    resizable: true,
+    frame: true,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  controlPanel.loadFile('dashboard.html');
+
+  controlPanel.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      controlPanel.hide();
+    }
+  });
+
+  controlPanel.on('closed', () => {
+    controlPanel = null;
+  });
+}
+
+function createOverlay() {
+  const displays = screen.getAllDisplays();
+  const targetIndex = store.get('monitorIndex');
+  const targetDisplay = displays[targetIndex] || displays[0];
+  const { x, y, width, height } = targetDisplay.bounds;
+  const centerX = x + Math.floor(width / 2);
+  const centerY = y + Math.floor(height / 2);
+
+  overlay = new BrowserWindow({
+    x: centerX - 200,
+    y: centerY - 200,
+    width: 400,
+    height: 400,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  overlay.loadFile('overlay.html');
+  overlay.setIgnoreMouseEvents(true, { forward: true });
+
+  if (!overlayVisible) {
+    overlay.hide();
+  }
+}
+
+function createTray() {
+  const iconSize = 16;
+  const canvas = nativeImage.createEmpty();
+  tray = new Tray(canvas);
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show Control Panel',
+      click: () => {
+        if (controlPanel) {
+          controlPanel.show();
+          controlPanel.focus();
+        }
+      }
+    },
+    {
+      label: 'Toggle Crosshair',
+      click: () => {
+        toggleOverlay();
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setToolTip('Crosshair Way');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('double-click', () => {
+    if (controlPanel) {
+      controlPanel.show();
+      controlPanel.focus();
+    }
+  });
+}
+
+function toggleOverlay() {
+  overlayVisible = !overlayVisible;
+  store.set('visible', overlayVisible);
+  if (overlay) {
+    if (overlayVisible) {
+      overlay.show();
+    } else {
+      overlay.hide();
+    }
+  }
+}
+
+function updateOverlayPosition() {
+  if (!overlay) return;
+  const displays = screen.getAllDisplays();
+  const targetIndex = store.get('monitorIndex');
+  const targetDisplay = displays[targetIndex] || displays[0];
+  const { x, y, width, height } = targetDisplay.bounds;
+  const centerX = x + Math.floor(width / 2);
+  const centerY = y + Math.floor(height / 2);
+  const offsetX = store.get('offsetX') || 0;
+  const offsetY = store.get('offsetY') || 0;
+  overlay.setPosition(centerX - 200 + offsetX, centerY - 200 + offsetY);
+}
+
+app.whenReady().then(() => {
+  createControlPanel();
+  createOverlay();
+  createTray();
+
+  globalShortcut.register('Control+Shift+H', () => {
+    toggleOverlay();
+  });
+
+  app.setLoginItemSettings({
+    openAtLogin: store.get('autoStart')
+  });
+});
+
+app.on('window-all-closed', (event) => {
+  event.preventDefault();
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true;
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
+
+ipcMain.handle('get-settings', () => {
+  return store.store;
+});
+
+ipcMain.handle('update-setting', (event, key, value) => {
+  store.set(key, value);
+  if (key === 'monitorIndex' || key === 'offsetX' || key === 'offsetY') {
+    updateOverlayPosition();
+  }
+  if (key === 'crosshairMode' || key === 'shape' || key === 'color' || key === 'size' || key === 'thickness' || key === 'gap' || key === 'opacity' || key === 'customImagePath') {
+    if (overlay) {
+      overlay.webContents.send('update-crosshair', store.store);
+    }
+  }
+  if (key === 'autoStart') {
+    app.setLoginItemSettings({ openAtLogin: value });
+  }
+  return true;
+});
+
+ipcMain.handle('toggle-overlay', () => {
+  toggleOverlay();
+  return overlayVisible;
+});
+
+ipcMain.handle('get-overlay-visibility', () => {
+  return overlayVisible;
+});
+
+ipcMain.handle('get-monitors', () => {
+  const displays = screen.getAllDisplays();
+  return displays.map((d, i) => ({
+    index: i,
+    name: `Display ${i + 1}`,
+    bounds: d.bounds
+  }));
+});
+
+ipcMain.handle('pick-image', async () => {
+  if (!controlPanel) return null;
+  const result = await dialog.showOpenDialog(controlPanel, {
+    properties: ['openFile'],
+    filters: [{ name: 'PNG Images', extensions: ['png'] }]
+  });
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
+ipcMain.handle('get-crosshair-state', () => {
+  return store.store;
+});
+
+ipcMain.on('update-overlay-crosshair', (event, data) => {
+  if (overlay) {
+    overlay.webContents.send('update-crosshair', data);
+  }
+});

@@ -1,0 +1,18 @@
+{
+  "name": "crosshair-way",
+  "version": "1.0.0",
+  "description": "Premium open-source crosshair overlay for Windows gamers",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "author": "Way-cfg",
+  "license": "MIT",
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0"
+  }
+}

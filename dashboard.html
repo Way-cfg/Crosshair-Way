@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crosshair Way - Control Panel</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">+</div>
+        <h1>CROSSHAIR<br><span>WAY</span></h1>
+      </div>
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="crosshair">
+          <span class="nav-icon">&#9672;</span>
+          Crosshair
+        </button>
+        <button class="nav-item" data-tab="position">
+          <span class="nav-icon">&#8663;</span>
+          Position
+        </button>
+        <button class="nav-item" data-tab="display">
+          <span class="nav-icon">&#9000;</span>
+          Display
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="nav-icon">&#9881;</span>
+          Settings
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="visibility-toggle">
+          <span>Crosshair</span>
+          <label class="switch">
+            <input type="checkbox" id="visibilityToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section id="tab-crosshair" class="tab-content active">
+        <div class="tab-header">
+          <h2>Crosshair Configuration</h2>
+          <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="generator">Generator</button>
+            <button class="mode-btn" data-mode="image">Custom Image</button>
+          </div>
+        </div>
+
+        <div id="generator-controls" class="controls-panel">
+          <div class="control-group">
+            <label>Shape</label>
+            <div class="shape-selector">
+              <button class="shape-btn active" data-shape="cross">
+                <svg viewBox="0 0 24 24"><path d="M10 2h4v8h8v4h-8v8h-4v-8H2v-4h8V2z" fill="currentColor"/></svg>
+              </button>
+              <button class="shape-btn" data-shape="dot">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
+              </button>
+              <button class="shape-btn" data-shape="circle">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+              </button>
+              <button class="shape-btn" data-shape="tshape">
+                <svg viewBox="0 0 24 24"><path d="M2 2h20v4h-8v16h-4V6H2V2z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label>Size: <span id="sizeValue">30</span>px</label>
+            <input type="range" id="sizeSlider" min="10" max="100" value="30" class="glow-slider">
+          </div>
+
+          <div class="control-group">
+            <label>Thickness: <span id="thicknessValue">3</span>px</label>
+            <input type="range" id="thicknessSlider" min="1" max="12" value="3" class="glow-slider">
+          </div>
+
+          <div class="control-group">
+            <label>Gap: <span id="gapValue">6</span>px</label>
+            <input type="range" id="gapSlider" min="0" max="30" value="6" class="glow-slider">
+          </div>
+
+          <div class="control-group">
+            <label>Color</label>
+            <div class="color-picker-row">
+              <input type="color" id="colorPicker" value="#00ff66">
+              <input type="text" id="colorHex" value="#00ff66" maxlength="7">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label>Opacity: <span id="opacityValue">80</span>%</label>
+            <input type="range" id="opacitySlider" min="5" max="100" value="80" class="glow-slider">
+          </div>
+        </div>
+
+        <div id="image-controls" class="controls-panel hidden">
+          <div class="control-group">
+            <label>Custom Crosshair Image</label>
+            <button id="pickImageBtn" class="action-btn">Select PNG File</button>
+            <p id="imagePathDisplay" class="file-path">No image selected</p>
+          </div>
+          <div class="control-group">
+            <label>Image Size: <span id="imageSizeValue">60</span>px</label>
+            <input type="range" id="imageSizeSlider" min="20" max="200" value="60" class="glow-slider">
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-position" class="tab-content">
+        <div class="tab-header">
+          <h2>Position Calibration</h2>
+        </div>
+        <div class="controls-panel">
+          <div class="control-group">
+            <label>X Offset: <span id="offsetXValue">0</span>px</label>
+            <input type="range" id="offsetXSlider" min="-200" max="200" value="0" class="glow-slider">
+          </div>
+          <div class="control-group">
+            <label>Y Offset: <span id="offsetYValue">0</span>px</label>
+            <input type="range" id="offsetYSlider" min="-200" max="200" value="0" class="glow-slider">
+          </div>
+          <button id="resetPositionBtn" class="action-btn secondary">Reset to Center</button>
+        </div>
+      </section>
+
+      <section id="tab-display" class="tab-content">
+        <div class="tab-header">
+          <h2>Display Settings</h2>
+        </div>
+        <div class="controls-panel">
+          <div class="control-group">
+            <label>Monitor</label>
+            <select id="monitorSelect" class="glow-select"></select>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="tab-content">
+        <div class="tab-header">
+          <h2>Application Settings</h2>
+        </div>
+        <div class="controls-panel">
+          <div class="control-group row">
+            <label>Launch on Windows Startup</label>
+            <label class="switch">
+              <input type="checkbox" id="autoStartToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="control-group row">
+            <label>Global Hotkey (Ctrl+Shift+H)</label>
+            <span class="hotkey-badge">Ctrl + Shift + H</span>
+          </div>
+          <div class="control-group row">
+            <label>Version</label>
+            <span class="version-badge">v1.0.0</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

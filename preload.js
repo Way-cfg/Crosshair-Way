@@ -12,7 +12,6 @@ contextBridge.exposeInMainWorld('crosshairAPI', {
   setHotkey: (key) => ipcRenderer.invoke('set-hotkey', key),
   validateHotkey: (key) => ipcRenderer.invoke('validate-hotkey', key),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
-  importSettings: (data) => ipcRenderer.invoke('import-settings', data),
   forceOverlaySync: () => ipcRenderer.invoke('force-overlay-sync'),
   onUpdateCrosshair: (callback) => {
     ipcRenderer.on('update-crosshair', (event, data) => callback(data));

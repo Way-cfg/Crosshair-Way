@@ -5,15 +5,15 @@
 }
 
 :root {
-  --bg-primary: #121214;
-  --bg-secondary: #1a1a1e;
-  --bg-tertiary: #222228;
-  --accent: #00ff66;
-  --accent-dim: rgba(0, 255, 102, 0.15);
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #111113;
+  --bg-tertiary: #1a1a1d;
+  --accent: #ff6600;
+  --accent-dim: rgba(255, 102, 0, 0.15);
   --text-primary: #e8e8ea;
   --text-secondary: #888890;
-  --border-color: #2a2a30;
-  --shadow-glow: 0 0 20px rgba(0, 255, 102, 0.15);
+  --border-color: #222226;
+  --shadow-glow: 0 0 20px rgba(255, 102, 0, 0.15);
 }
 
 body {
@@ -305,7 +305,7 @@ input:checked + .slider:before {
   border-color: var(--accent);
   background: var(--accent-dim);
   color: var(--accent);
-  box-shadow: 0 0 12px rgba(0, 255, 102, 0.2);
+  box-shadow: 0 0 12px rgba(255, 102, 0, 0.2);
 }
 
 .shape-btn svg {
@@ -333,13 +333,13 @@ input:checked + .slider:before {
   background: var(--accent);
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
   border: 2px solid var(--bg-primary);
   transition: box-shadow 0.2s ease;
 }
 
 .glow-slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 102, 0.7);
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.7);
 }
 
 .glow-slider::-moz-range-thumb {
@@ -349,7 +349,7 @@ input:checked + .slider:before {
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid var(--bg-primary);
-  box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
 }
 
 /* Color Picker */
@@ -393,7 +393,7 @@ input:checked + .slider:before {
 .color-picker-row input[type="text"]:focus {
   border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
+  box-shadow: 0 0 8px rgba(255, 102, 0, 0.2);
 }
 
 /* Buttons */
@@ -411,7 +411,7 @@ input:checked + .slider:before {
 }
 
 .action-btn:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.4);
   transform: translateY(-1px);
 }
 
@@ -449,7 +449,7 @@ input:checked + .slider:before {
 
 .glow-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
+  box-shadow: 0 0 8px rgba(255, 102, 0, 0.2);
 }
 
 /* Badges */

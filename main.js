@@ -7,7 +7,7 @@ const store = new Store({
   defaults: {
     crosshairMode: 'generator',
     shape: 'cross',
-    color: '#00ff66',
+    color: '#ff6600',
     size: 30,
     thickness: 3,
     gap: 6,

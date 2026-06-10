@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 const Store = require('electron-store');
 
 const store = new Store({
@@ -25,7 +26,7 @@ const store = new Store({
     hotkey: 'Control+Shift+H',
     zoomModeEnabled: false,
     zoomTriggerType: 'toggle',
-    zoomKeybind: 'Control+Shift+Z',
+    zoomKeybind: 'Mouse2',
     zoomProfileSettings: {
       crosshairMode: 'generator',
       shape: 'cross',
@@ -69,6 +70,7 @@ let overlay = null;
 let tray = null;
 let overlayVisible = store.get('visible');
 let zoomActive = false;
+let mouseHookProcess = null;
 
 function createControlPanel() {
   controlPanel = new BrowserWindow({
@@ -213,29 +215,6 @@ function registerHotkey(key) {
   }
 }
 
-function registerZoomHotkey() {
-  const key = store.get('zoomKeybind');
-  if (!key || typeof key !== 'string') return;
-  try {
-    globalShortcut.register(key, handleZoomTrigger);
-  } catch (e) {
-    console.error('Failed to register zoom hotkey:', e);
-  }
-}
-
-function registerAllHotkeys() {
-  globalShortcut.unregisterAll();
-  registerHotkey(store.get('hotkey'));
-  if (store.get('zoomModeEnabled')) {
-    registerZoomHotkey();
-  }
-}
-
-function handleZoomTrigger() {
-  if (!store.get('zoomModeEnabled')) return;
-  zoomActive ? applyNormalProfile() : applyZoomProfile();
-}
-
 function applyZoomProfile() {
   zoomActive = true;
   if (!overlay) return;
@@ -249,6 +228,69 @@ function applyNormalProfile() {
   overlay.webContents.send('update-crosshair', store.store);
 }
 
+function startMouseHook() {
+  if (mouseHookProcess) return;
+  const childPath = path.join(__dirname, 'mouse-hook-child.ps1');
+  if (!fs.existsSync(childPath)) return;
+  try {
+    mouseHookProcess = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', childPath], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true
+    });
+    let buffer = '';
+    mouseHookProcess.stdout.on('data', (data) => {
+      buffer += data.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const evt = JSON.parse(line);
+          handleMouseEvent(evt);
+        } catch (e) {}
+      }
+    });
+    mouseHookProcess.on('exit', () => {
+      mouseHookProcess = null;
+    });
+  } catch (e) {
+    console.error('Failed to start mouse hook:', e);
+    mouseHookProcess = null;
+  }
+}
+
+function stopMouseHook() {
+  if (mouseHookProcess) {
+    mouseHookProcess.kill();
+    mouseHookProcess = null;
+  }
+}
+
+function handleMouseEvent(evt) {
+  if (!store.get('zoomModeEnabled')) return;
+  const keybind = store.get('zoomKeybind') || 'Mouse2';
+  const expectedButton = parseInt(keybind.replace('Mouse', ''));
+  if (isNaN(expectedButton) || evt.button !== expectedButton) return;
+  const triggerType = store.get('zoomTriggerType') || 'toggle';
+
+  if (triggerType === 'hold') {
+    if (evt.type === 'mousedown') {
+      applyZoomProfile();
+    } else if (evt.type === 'mouseup') {
+      applyNormalProfile();
+    }
+  } else {
+    if (evt.type === 'mousedown') {
+      zoomActive ? applyNormalProfile() : applyZoomProfile();
+    }
+  }
+}
+
+function registerAllHotkeys() {
+  globalShortcut.unregisterAll();
+  registerHotkey(store.get('hotkey'));
+}
+
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   createControlPanel();
@@ -256,6 +298,7 @@ app.whenReady().then(() => {
   createTray();
 
   registerAllHotkeys();
+  startMouseHook();
 
   app.setLoginItemSettings({
     openAtLogin: store.get('autoStart')
@@ -272,7 +315,7 @@ app.on('before-quit', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
-  uIOhook.stop();
+  stopMouseHook();
 });
 
 ipcMain.handle('get-settings', () => {
@@ -292,10 +335,12 @@ ipcMain.handle('update-setting', (event, key, value) => {
   if (key === 'autoStart') {
     app.setLoginItemSettings({ openAtLogin: value });
   }
-  if (key === 'zoomModeEnabled' || key === 'zoomKeybind') {
-    registerAllHotkeys();
-    if (!store.get('zoomModeEnabled') && zoomActive) {
-      applyNormalProfile();
+  if (key === 'zoomModeEnabled') {
+    if (value) {
+      startMouseHook();
+    } else {
+      stopMouseHook();
+      if (zoomActive) applyNormalProfile();
     }
   }
   return true;

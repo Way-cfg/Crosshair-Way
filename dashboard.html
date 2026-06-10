@@ -166,12 +166,18 @@
             <div class="zoom-row">
               <label>Trigger Mode</label>
               <select id="zoomTriggerType" class="glow-select">
-                <option value="toggle">Toggle (press to switch)</option>
+                <option value="hold">Hold (while pressed)</option>
+                <option value="toggle">Toggle (click to switch)</option>
               </select>
             </div>
             <div class="zoom-row">
-              <label>Zoom Keybind</label>
-              <button id="zoomKeybindBtn" class="hotkey-bind-btn">Ctrl + Shift + Z</button>
+              <label>Mouse Button</label>
+              <select id="zoomMouseSelect" class="glow-select">
+                <option value="Mouse2">Right Click</option>
+                <option value="Mouse3">Middle Click</option>
+                <option value="Mouse4">Mouse Button 4 (Back)</option>
+                <option value="Mouse5">Mouse Button 5 (Forward)</option>
+              </select>
             </div>
             <button id="zoomConfigBtn" class="zoom-config-btn">Configure Zoom Crosshair Style</button>
           </div>

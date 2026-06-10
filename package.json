@@ -17,6 +17,9 @@
     "directories": {
       "output": "dist"
     },
+    "asarUnpack": [
+      "mouse-hook-child.ps1"
+    ],
     "files": [
       "main.js",
       "preload.js",
@@ -26,6 +29,7 @@
       "overlay.html",
       "overlay.css",
       "overlay.js",
+      "mouse-hook-child.ps1",
       "assets/**/*",
       "node_modules/**/*"
     ],

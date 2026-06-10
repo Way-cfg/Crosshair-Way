@@ -248,9 +248,11 @@ function setupEventListeners() {
     await window.crosshairAPI.updateSetting('zoomTriggerType', e.target.value);
   });
 
-  document.getElementById('zoomConfigBtn').addEventListener('click', toggleZoomConfig);
+  document.getElementById('zoomMouseSelect').addEventListener('change', async (e) => {
+    await window.crosshairAPI.updateSetting('zoomKeybind', e.target.value);
+  });
 
-  setupZoomKeybindBinding();
+  document.getElementById('zoomConfigBtn').addEventListener('click', toggleZoomConfig);
 }
 
 function toggleCrosshairMode(mode) {
@@ -323,9 +325,8 @@ async function switchProfile(name) {
 
 function loadZoomUI() {
   document.getElementById('zoomModeToggle').checked = settings.zoomModeEnabled || false;
-  document.getElementById('zoomTriggerType').value = settings.zoomTriggerType || 'toggle';
-  const zoomKey = settings.zoomKeybind || 'Control+Shift+Z';
-  document.getElementById('zoomKeybindBtn').textContent = zoomKey.replace(/\+/g, ' + ');
+  document.getElementById('zoomTriggerType').value = settings.zoomTriggerType || 'hold';
+  document.getElementById('zoomMouseSelect').value = settings.zoomKeybind || 'Mouse2';
 }
 
 async function toggleZoomConfig() {
@@ -448,57 +449,4 @@ function setupHotkeyBinding() {
   });
 }
 
-function setupZoomKeybindBinding() {
-  const btn = document.getElementById('zoomKeybindBtn');
-  let listening = false;
 
-  function startListening() {
-    listening = true;
-    btn.classList.add('listening');
-    btn.textContent = 'Press keys to bind...';
-  }
-
-  function stopListening() {
-    listening = false;
-    btn.classList.remove('listening');
-  }
-
-  btn.addEventListener('click', startListening);
-
-  document.addEventListener('keydown', async (e) => {
-    if (!listening) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (e.key === 'Escape') {
-      stopListening();
-      const zoomKey = settings.zoomKeybind || 'Control+Shift+Z';
-      btn.textContent = zoomKey.replace(/\+/g, ' + ');
-      return;
-    }
-
-    const parts = [];
-    if (e.ctrlKey) parts.push('Control');
-    if (e.altKey) parts.push('Alt');
-    if (e.shiftKey) parts.push('Shift');
-    if (e.metaKey) parts.push('Super');
-
-    const ignored = ['Control', 'Alt', 'Shift', 'Meta'];
-    if (ignored.includes(e.key)) return;
-
-    let mainKey = e.key;
-    if (mainKey === ' ') mainKey = 'Space';
-    if (mainKey.length === 1 && mainKey >= 'a' && mainKey <= 'z') {
-      mainKey = mainKey.toUpperCase();
-    }
-    parts.push(mainKey);
-
-    const accel = parts.join('+');
-    if (parts.length < 2) return;
-
-    stopListening();
-    btn.textContent = formatHotkey(accel);
-    await window.crosshairAPI.updateSetting('zoomKeybind', accel);
-    settings.zoomKeybind = accel;
-  });
-}

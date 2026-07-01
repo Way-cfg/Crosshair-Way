@@ -1,7 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
 const Store = require('electron-store');
 
 const store = new Store({
@@ -70,7 +69,11 @@ let overlay = null;
 let tray = null;
 let overlayVisible = store.get('visible');
 let zoomActive = false;
-let mouseHookProcess = null;
+
+let hookRunning = false;
+let hookId = 0;
+let pollInterval = null;
+let koffiRefs = null;
 
 function createControlPanel() {
   controlPanel = new BrowserWindow({
@@ -228,53 +231,86 @@ function applyNormalProfile() {
   overlay.webContents.send('update-crosshair', store.store);
 }
 
-function startMouseHook() {
-  if (mouseHookProcess) return;
-  const childPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'mouse-hook-child.exe')
-    : path.join(__dirname, 'mouse-hook-child.exe');
-  if (!fs.existsSync(childPath)) {
-    console.error('[mouse-hook] not found at', childPath);
-    return;
-  }
+function setupMouseHook() {
+  if (hookRunning) return;
   try {
-    mouseHookProcess = spawn(childPath, [], {
-      stdio: ['ignore', 'pipe', 'pipe']
+    const koffi = require('koffi');
+    const user32 = koffi.load('user32.dll');
+
+    const HOOKPROC = koffi.proto('HOOKPROC', 'long', ['int', 'size_t', 'int64']);
+    const MSG = koffi.struct('MSG', {
+      hwnd: 'void *',
+      message: 'uint32',
+      wParam: 'uint64',
+      lParam: 'int64',
+      time: 'uint32',
+      pt_x: 'int32',
+      pt_y: 'int32'
     });
-    let buffer = '';
-    mouseHookProcess.stdout.on('data', (data) => {
-      buffer += data.toString('utf8');
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const evt = JSON.parse(line);
-          handleMouseEvent(evt);
-        } catch (e) {
-          console.error('[mouse-hook] parse error:', e.message);
-        }
+
+    const SetWindowsHookExW = user32.func('SetWindowsHookExW', 'void *', ['int', HOOKPROC, 'void *', 'uint32']);
+    const CallNextHookEx = user32.func('CallNextHookEx', 'int64', ['void *', 'int', 'size_t', 'int64']);
+    const PeekMessageW = user32.func('PeekMessageW', 'bool', [koffi.pointer(MSG), 'void *', 'uint32', 'uint32', 'uint32']);
+    const TranslateMessage = user32.func('TranslateMessage', 'bool', [koffi.pointer(MSG)]);
+    const DispatchMessageW = user32.func('DispatchMessageW', 'int64', [koffi.pointer(MSG)]);
+
+    const msg = {};
+    const PM_REMOVE = 0x0001;
+
+    const hookCallback = koffi.register('HookCallback', HOOKPROC, (nCode, wParam, lParam) => {
+      if (nCode >= 0) {
+        if (wParam === 0x0201) handleMouseEvent({ type: 'mousedown', button: 1 });
+        else if (wParam === 0x0202) handleMouseEvent({ type: 'mouseup', button: 1 });
+        else if (wParam === 0x0204) handleMouseEvent({ type: 'mousedown', button: 2 });
+        else if (wParam === 0x0205) handleMouseEvent({ type: 'mouseup', button: 2 });
+        else if (wParam === 0x0207) handleMouseEvent({ type: 'mousedown', button: 3 });
+        else if (wParam === 0x0208) handleMouseEvent({ type: 'mouseup', button: 3 });
       }
+      return CallNextHookEx(null, nCode, wParam, lParam);
     });
-    mouseHookProcess.stderr.on('data', (data) => {
-      console.error('[mouse-hook] stderr:', data.toString('utf8'));
-    });
-    mouseHookProcess.on('exit', (code) => {
-      console.error('[mouse-hook] exited', code);
-      mouseHookProcess = null;
-    });
-    console.log('[mouse-hook] started');
+
+    koffiRefs = { hookCallback, msg };
+
+    hookId = SetWindowsHookExW(14, hookCallback, null, 0);
+    if (!hookId) {
+      console.error('[mouse-hook] SetWindowsHookEx failed');
+      return;
+    }
+
+    hookRunning = true;
+
+    pollInterval = setInterval(() => {
+      if (!hookRunning) return;
+      while (PeekMessageW(msg, null, 0, 0, PM_REMOVE)) {
+        TranslateMessage(msg);
+        DispatchMessageW(msg);
+      }
+    }, 1);
+
+    console.log('[mouse-hook] installed');
   } catch (e) {
-    console.error('[mouse-hook] failed:', e.message);
-    mouseHookProcess = null;
+    console.error('[mouse-hook] setup failed:', e.message);
   }
 }
 
 function stopMouseHook() {
-  if (mouseHookProcess) {
-    mouseHookProcess.kill();
-    mouseHookProcess = null;
+  if (!hookRunning) return;
+  hookRunning = false;
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
   }
+  if (hookId) {
+    try {
+      const koffi = require('koffi');
+      const user32 = koffi.load('user32.dll');
+      const UnhookWindowsHookEx = user32.func('UnhookWindowsHookEx', 'bool', ['void *']);
+      UnhookWindowsHookEx(hookId);
+    } catch (e) {}
+    hookId = 0;
+  }
+  koffiRefs = null;
+  console.log('[mouse-hook] stopped');
 }
 
 function handleMouseEvent(evt) {
@@ -309,7 +345,7 @@ app.whenReady().then(() => {
   createTray();
 
   registerAllHotkeys();
-  startMouseHook();
+  setupMouseHook();
 
   app.setLoginItemSettings({
     openAtLogin: store.get('autoStart')
@@ -348,7 +384,7 @@ ipcMain.handle('update-setting', (event, key, value) => {
   }
   if (key === 'zoomModeEnabled') {
     if (value) {
-      startMouseHook();
+      setupMouseHook();
     } else {
       stopMouseHook();
       if (zoomActive) applyNormalProfile();

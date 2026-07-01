@@ -18,7 +18,7 @@
       "output": "dist"
     },
     "asarUnpack": [
-      "mouse-hook-child.py"
+      "node_modules/uiohook-napi/**"
     ],
     "files": [
       "main.js",
@@ -29,7 +29,6 @@
       "overlay.html",
       "overlay.css",
       "overlay.js",
-      "mouse-hook-child.py",
       "assets/**/*",
       "node_modules/**/*"
     ],
@@ -63,7 +62,8 @@
   "author": "Way-cfg",
   "license": "MIT",
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",

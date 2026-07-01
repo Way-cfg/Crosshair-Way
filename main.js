@@ -1,8 +1,8 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
 const Store = require('electron-store');
+const { uIOhook } = require('uiohook-napi');
 
 const store = new Store({
   defaults: {
@@ -70,7 +70,7 @@ let overlay = null;
 let tray = null;
 let overlayVisible = store.get('visible');
 let zoomActive = false;
-let mouseHookProcess = null;
+let mouseHookRunning = false;
 
 function createControlPanel() {
   controlPanel = new BrowserWindow({
@@ -228,52 +228,32 @@ function applyNormalProfile() {
   overlay.webContents.send('update-crosshair', store.store);
 }
 
+uIOhook.on('mousedown', (e) => {
+  handleMouseEvent({ type: 'mousedown', button: e.button });
+});
+uIOhook.on('mouseup', (e) => {
+  handleMouseEvent({ type: 'mouseup', button: e.button });
+});
+
 function startMouseHook() {
-  if (mouseHookProcess) return;
-  const childPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'mouse-hook-child.py')
-    : path.join(__dirname, 'mouse-hook-child.py');
-  if (!fs.existsSync(childPath)) {
-    console.error('mouse-hook-child.py not found at', childPath);
-    return;
-  }
+  if (mouseHookRunning) return;
   try {
-    mouseHookProcess = spawn('python', [childPath], {
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    let buffer = '';
-    mouseHookProcess.stdout.on('data', (data) => {
-      buffer += data.toString('utf8');
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const evt = JSON.parse(line);
-          handleMouseEvent(evt);
-        } catch (e) {
-          console.error('Mouse hook JSON parse error:', e.message, 'raw:', JSON.stringify(line));
-        }
-      }
-    });
-    mouseHookProcess.stderr.on('data', (data) => {
-      console.error('[mouse-hook] stderr:', data.toString('utf8'));
-    });
-    mouseHookProcess.on('exit', (code) => {
-      console.error('[mouse-hook] exited with code', code);
-      mouseHookProcess = null;
-    });
+    uIOhook.start();
+    mouseHookRunning = true;
+    console.log('[mouse-hook] uiohook started');
   } catch (e) {
-    console.error('Failed to start mouse hook:', e);
-    mouseHookProcess = null;
+    console.error('[mouse-hook] failed to start:', e.message);
   }
 }
 
 function stopMouseHook() {
-  if (mouseHookProcess) {
-    mouseHookProcess.kill();
-    mouseHookProcess = null;
+  if (!mouseHookRunning) return;
+  try {
+    uIOhook.stop();
+  } catch (e) {
+    console.error('[mouse-hook] failed to stop:', e.message);
   }
+  mouseHookRunning = false;
 }
 
 function handleMouseEvent(evt) {

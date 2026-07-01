@@ -18,3 +18,5 @@ CLAUDE.md
 opencode.json
 opencode.jsonc
 .opencode/
+__pycache__/
+*.pyc

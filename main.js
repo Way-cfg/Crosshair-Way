@@ -231,16 +231,15 @@ function applyNormalProfile() {
 function startMouseHook() {
   if (mouseHookProcess) return;
   const childPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'mouse-hook-child.ps1')
-    : path.join(__dirname, 'mouse-hook-child.ps1');
+    ? path.join(process.resourcesPath, 'mouse-hook-child.py')
+    : path.join(__dirname, 'mouse-hook-child.py');
   if (!fs.existsSync(childPath)) {
-    console.error('mouse-hook-child.ps1 not found at', childPath);
+    console.error('mouse-hook-child.py not found at', childPath);
     return;
   }
   try {
-    mouseHookProcess = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', childPath], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true
+    mouseHookProcess = spawn('python', [childPath], {
+      stdio: ['ignore', 'pipe', 'pipe']
     });
     let buffer = '';
     mouseHookProcess.stdout.on('data', (data) => {
@@ -258,10 +257,10 @@ function startMouseHook() {
       }
     });
     mouseHookProcess.stderr.on('data', (data) => {
-      console.error('Mouse hook stderr:', data.toString('utf8'));
+      console.error('[mouse-hook] stderr:', data.toString('utf8'));
     });
     mouseHookProcess.on('exit', (code) => {
-      console.error('Mouse hook exited with code', code);
+      console.error('[mouse-hook] exited with code', code);
       mouseHookProcess = null;
     });
   } catch (e) {

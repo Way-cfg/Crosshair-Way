@@ -230,16 +230,21 @@ function applyNormalProfile() {
 
 function startMouseHook() {
   if (mouseHookProcess) return;
-  const childPath = path.join(__dirname, 'mouse-hook-child.ps1');
-  if (!fs.existsSync(childPath)) return;
+  const childPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'mouse-hook-child.ps1')
+    : path.join(__dirname, 'mouse-hook-child.ps1');
+  if (!fs.existsSync(childPath)) {
+    console.error('mouse-hook-child.ps1 not found at', childPath);
+    return;
+  }
   try {
     mouseHookProcess = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', childPath], {
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     });
     let buffer = '';
     mouseHookProcess.stdout.on('data', (data) => {
-      buffer += data.toString();
+      buffer += data.toString('utf8');
       const lines = buffer.split('\n');
       buffer = lines.pop();
       for (const line of lines) {
@@ -247,10 +252,16 @@ function startMouseHook() {
         try {
           const evt = JSON.parse(line);
           handleMouseEvent(evt);
-        } catch (e) {}
+        } catch (e) {
+          console.error('Mouse hook JSON parse error:', e.message, 'raw:', JSON.stringify(line));
+        }
       }
     });
-    mouseHookProcess.on('exit', () => {
+    mouseHookProcess.stderr.on('data', (data) => {
+      console.error('Mouse hook stderr:', data.toString('utf8'));
+    });
+    mouseHookProcess.on('exit', (code) => {
+      console.error('Mouse hook exited with code', code);
       mouseHookProcess = null;
     });
   } catch (e) {

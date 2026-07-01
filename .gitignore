@@ -4,10 +4,17 @@ dist/
 out/
 .env
 *.log
-*.md
 *.db
 *.sqlite
 scratchpad*
 agent*
 todo*
 notes*
+# AI agent / LLM instruction files
+AGENTS.md
+CLAUDE.md
+.cursor/
+.cursorrules
+opencode.json
+opencode.jsonc
+.opencode/
